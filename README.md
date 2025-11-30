@@ -16,7 +16,7 @@ System-wide voice dictation for Linux. Speak anywhere - browser, terminal, IDE, 
 ### 1. Clone and Install
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/voice-dictation.git
+git clone https://github.com/sasajib/voice-dictation.git
 cd voice-dictation
 
 # Install everything
