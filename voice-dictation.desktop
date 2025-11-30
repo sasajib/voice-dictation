@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Voice Dictation
+Comment=Voice dictation daemon with system tray
+Exec=/home/sasajib/Desktop/projects/official/webstar/voice/start-voice-daemon.sh
+Icon=/home/sasajib/Desktop/projects/official/webstar/voice/icons/mic-idle.svg
+Terminal=false
+Categories=Utility;Accessibility;
+StartupNotify=false
+X-GNOME-Autostart-enabled=true
+X-KDE-autostart-after=panel

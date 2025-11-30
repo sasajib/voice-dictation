@@ -1,0 +1,19 @@
+# Voice Dictation Dependencies
+# RealtimeSTT for real-time speech-to-text with VAD
+RealtimeSTT>=0.1.0
+
+# Audio processing
+pyaudio>=0.2.13
+
+# Optional but recommended for better performance
+faster-whisper>=0.10.0
+
+# For clipboard integration
+pyperclip>=1.8.2
+
+# HTTP requests (dependency for RealtimeSTT)
+requests>=2.31.0
+
+# For terminal automation (if using xdotool approach)
+# Note: xdotool must be installed via system package manager
+# sudo pacman -S xdotool (on Manjaro)

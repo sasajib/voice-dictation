@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <!-- Microphone body -->
+  <rect x="9" y="2" width="6" height="11" rx="3" fill="#4CAF50"/>
+  <!-- Microphone stand -->
+  <path d="M12 15v4M8 19h8" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+  <!-- Sound waves -->
+  <path d="M5 9a7 7 0 0 0 14 0" stroke="#4CAF50" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Recording indicator -->
+  <circle cx="19" cy="5" r="3" fill="#f44336">
+    <animate attributeName="opacity" values="1;0.3;1" dur="1s" repeatCount="indefinite"/>
+  </circle>
+</svg>
