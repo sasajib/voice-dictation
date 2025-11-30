@@ -5,7 +5,7 @@ System-wide voice dictation for Linux. Speak anywhere - browser, terminal, IDE, 
 **Features:**
 - System tray daemon with hotkey toggle
 - Works on **X11 and Wayland**
-- Phrase-by-phrase dictation (natural pauses)
+- **Word-by-word** real-time typing (or phrase-by-phrase mode)
 - 100% offline (no internet required)
 - Fast CPU inference via faster-whisper
 - Audio feedback (sounds + notifications)
@@ -162,6 +162,26 @@ Choose based on your needs:
 **Change model:**
 ```bash
 export VOICE_MODEL=small.en
+python voice-daemon.py
+```
+
+### Typing Mode
+
+Choose between word-by-word (real-time) or phrase-by-phrase (after pause):
+
+| Mode | Behavior | Latency | Use Case |
+|------|----------|---------|----------|
+| **Word-by-word** (default) | Types each word as you speak | Instant | Natural typing feel, live feedback |
+| **Phrase-by-phrase** | Types after you pause | 0.5-1s | More accurate, better for commands |
+
+**Change mode:**
+```bash
+# Word-by-word (default)
+export VOICE_WORD_BY_WORD=true
+python voice-daemon.py
+
+# Phrase-by-phrase
+export VOICE_WORD_BY_WORD=false
 python voice-daemon.py
 ```
 

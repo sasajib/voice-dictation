@@ -57,10 +57,12 @@ class VoiceDaemon:
         self.recorder = None
         self.listen_thread = None
         self.shutdown_flag = False
+        self.last_typed_text = ""  # Track what we've already typed (for word-by-word)
 
         # Configuration
-        self.model = os.environ.get('VOICE_MODEL', 'base.en')
+        self.model = os.environ.get('VOICE_MODEL', 'small.en')
         self.language = os.environ.get('VOICE_LANGUAGE', 'en')
+        self.word_by_word = os.environ.get('VOICE_WORD_BY_WORD', 'true').lower() == 'true'
 
         # Paths
         self.icon_active = SCRIPT_DIR / 'icons' / 'mic-active.svg'
@@ -95,6 +97,7 @@ class VoiceDaemon:
 
         print(f"Voice Daemon started")
         print(f"  Model: {self.model}")
+        print(f"  Mode: {'word-by-word' if self.word_by_word else 'phrase-by-phrase'}")
         print(f"  Text injector: {self.text_injector}")
         print(f"  PID: {os.getpid()}")
         print(f"  Toggle: kill -USR1 {os.getpid()} or touch {self.toggle_file}")
@@ -292,38 +295,78 @@ class VoiceDaemon:
 
         print("Stopped listening")
 
+    def _on_realtime_update(self, text):
+        """Callback for realtime transcription updates (word-by-word)"""
+        if self.shutdown_flag or not self.is_listening:
+            return
+
+        # Type only the new words that weren't already typed
+        if text.startswith(self.last_typed_text):
+            new_text = text[len(self.last_typed_text):].lstrip()
+            if new_text:
+                self.signals.text_ready.emit(new_text)
+                self.last_typed_text = text
+
     def _listen_loop(self):
         """Main listening loop (runs in thread)"""
         try:
+            # Reset typed text tracker
+            self.last_typed_text = ""
+
             # Initialize recorder
-            self.recorder = AudioToTextRecorder(
-                model=self.model,
-                language=self.language,
-                enable_realtime_transcription=True,
-                silero_sensitivity=0.5,
-                webrtc_sensitivity=3,
-                post_speech_silence_duration=0.6,  # Slightly longer pause for phrase detection
-                min_length_of_recording=0.5,
-                min_gap_between_recordings=0.1,
-                spinner=False,
-            )
+            if self.word_by_word:
+                # Word-by-word mode: use realtime callback
+                self.recorder = AudioToTextRecorder(
+                    model=self.model,
+                    language=self.language,
+                    enable_realtime_transcription=True,
+                    on_realtime_transcription_update=self._on_realtime_update,
+                    silero_sensitivity=0.5,
+                    webrtc_sensitivity=3,
+                    post_speech_silence_duration=0.3,  # Shorter for faster word detection
+                    min_length_of_recording=0.3,
+                    min_gap_between_recordings=0,
+                    spinner=False,
+                )
+            else:
+                # Phrase-by-phrase mode: use blocking text()
+                self.recorder = AudioToTextRecorder(
+                    model=self.model,
+                    language=self.language,
+                    enable_realtime_transcription=True,
+                    silero_sensitivity=0.5,
+                    webrtc_sensitivity=3,
+                    post_speech_silence_duration=0.6,  # Longer pause for phrase detection
+                    min_length_of_recording=0.5,
+                    min_gap_between_recordings=0.1,
+                    spinner=False,
+                )
 
-            print("Recorder initialized, listening...")
+            print(f"Recorder initialized, listening... (mode: {'word-by-word' if self.word_by_word else 'phrase-by-phrase'})")
 
-            while self.is_listening and not self.shutdown_flag:
-                try:
-                    text = self.recorder.text()
+            if self.word_by_word:
+                # Word-by-word: keep recorder alive and let callback handle typing
+                while self.is_listening and not self.shutdown_flag:
+                    # Just keep the loop alive, callback does the work
+                    text = self.recorder.text()  # This blocks until speech ends
+                    # Reset for next phrase
+                    self.last_typed_text = ""
+            else:
+                # Phrase-by-phrase: wait for complete phrases
+                while self.is_listening and not self.shutdown_flag:
+                    try:
+                        text = self.recorder.text()
 
-                    if self.shutdown_flag:
+                        if self.shutdown_flag:
+                            break
+
+                        if text and text.strip():
+                            self.signals.text_ready.emit(text.strip())
+
+                    except Exception as e:
+                        if not self.shutdown_flag:
+                            self.signals.error_occurred.emit(str(e))
                         break
-
-                    if text and text.strip():
-                        self.signals.text_ready.emit(text.strip())
-
-                except Exception as e:
-                    if not self.shutdown_flag:
-                        self.signals.error_occurred.emit(str(e))
-                    break
 
         except Exception as e:
             self.signals.error_occurred.emit(f"Recorder init failed: {e}")
